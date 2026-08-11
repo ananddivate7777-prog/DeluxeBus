@@ -1,0 +1,499 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+.bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+}
+
+
+/* ================= DARK OVERLAY ================= */
+
+.overlay {
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background:
+        linear-gradient(
+            rgba(0, 0, 0, 0.20),
+            rgba(0, 0, 0, 0.60)
+        );
+
+    z-index: -2;
+}
+
+
+/* ================= MAIN ================= */
+
+.main-container {
+
+    width: 100%;
+    height: 100vh;
+
+    position: relative;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+}
+
+
+/* ================= HERO ================= */
+
+.hero {
+
+    text-align: center;
+
+    margin-bottom: 200px;
+}
+
+
+.hero h1 {
+
+    color: white;
+
+    font-size: clamp(35px, 9vw, 70px);
+
+    line-height: 0.60;
+
+    font-weight: 900;
+
+    letter-spacing: -4px;
+
+    text-shadow:
+        4px 4px 0 #d99b9b,
+        7px 7px 18px rgba(0, 0, 0, 0.75);
+}
+
+
+.hero p {
+
+    margin-top: 40px;
+
+    color: #f1df96;
+
+    font-size: clamp(12px, 1.5vw, 19px);
+
+    font-weight: 700;
+
+    text-shadow:
+        2px 2px 5px black;
+}
+
+
+/* ================= MUSIC PLAYER ================= */
+
+.music-player {
+
+    position: absolute;
+
+    left: 50%;
+    bottom: 42px;
+
+    transform: translateX(-50%);
+
+    width: min(600px, 90vw);
+
+    background: rgba(255, 255, 255, 0.15);
+
+    backdrop-filter: blur(5px);
+
+    -webkit-backdrop-filter: blur(5px);
+
+    border: 2px solid rgba(255, 255, 255, 0.35);
+
+    border-radius: 18px;
+
+    padding: 13px 20px 9px;
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35);
+
+    z-index: 10;
+}
+
+
+/* ================= PLAYER TITLE ================= */
+
+.player-header {
+
+    text-align: center;
+
+    color: white;
+
+    font-size: 21px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 9px;
+}
+
+
+/* ================= CONTENT ================= */
+
+.player-content {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+}
+
+
+/* ================= SONG IMAGE ================= */
+
+.song-image {
+
+    width: 55px;
+    height: 55px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    background: rgba(255,255,255,0.25);
+}
+
+
+.song-image img {
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+
+/* ================= SONG INFO ================= */
+
+.song-info {
+
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+.song-title {
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.song-artist {
+
+    color: white;
+
+    font-size: 12px;
+
+    margin-top: 4px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* ================= CONTROLS ================= */
+
+.controls {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.control-btn,
+.play-btn {
+
+    border: none;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+
+.control-btn {
+
+    width: 38px;
+    height: 38px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    color: #222;
+
+    font-size: 16px;
+}
+
+
+.control-btn:hover {
+
+    transform: scale(1.08);
+
+    background: white;
+}
+
+
+.play-btn {
+
+    width: 50px;
+    height: 50px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    color: #222;
+
+    font-size: 20px;
+}
+
+
+.play-btn:hover {
+
+    transform: scale(1.08);
+
+    background: rgb(168, 165, 165);
+}
+
+
+/* ================= PROGRESS ================= */
+
+.progress-section {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-top: 7px;
+}
+
+
+.progress-section span {
+
+    color: white;
+
+    font-size: 10px;
+
+    min-width: 27px;
+
+    text-align: center;
+}
+
+
+#progressBar {
+
+    flex: 1;
+
+    height: 4px;
+
+    appearance: none;
+
+    -webkit-appearance: none;
+
+    background: rgba(0,0,0,0.35);
+
+    border-radius: 10px;
+
+    cursor: pointer;
+}
+
+
+#progressBar::-webkit-slider-thumb {
+
+    appearance: none;
+
+    -webkit-appearance: none;
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    cursor: pointer;
+}
+
+
+#progressBar {
+    width: 100%;
+    appearance: none;
+    height: 5px;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+}
+
+
+/* ==================================================
+   YOUTUBE PLAYER
+   ================================================== */
+
+/*
+   YouTube requires minimum 200x200.
+   We keep it technically valid but invisible.
+*/
+
+#youtube-player {
+
+    position: fixed;
+
+    width: 200px;
+    height: 200px;
+
+    left: -250px;
+    top: -250px;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    z-index: -1;
+}
+
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 600px) {
+
+    .hero {
+
+        margin-bottom: 150px;
+    }
+
+
+    .hero h1 {
+
+        font-size: 58px;
+
+        letter-spacing: -2px;
+    }
+
+
+    .hero p {
+
+        font-size: 12px;
+
+        max-width: 330px;
+
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+
+    .music-player {
+
+        width: 94vw;
+
+        bottom: 18px;
+
+        padding: 10px 11px 8px;
+    }
+
+
+    .player-header {
+
+        font-size: 17px;
+    }
+
+
+    .song-image {
+
+        width: 45px;
+        height: 45px;
+    }
+
+
+    .song-title {
+
+        font-size: 12px;
+    }
+
+
+    .song-artist {
+
+        font-size: 10px;
+    }
+
+
+    .controls {
+
+        gap: 4px;
+    }
+
+
+    .control-btn {
+
+        width: 32px;
+        height: 32px;
+
+        font-size: 13px;
+    }
+
+
+    .play-btn {
+
+        width: 42px;
+        height: 42px;
+
+        font-size: 17px;
+    }
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Deluxe Dhaba</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- BACKGROUND IMAGE -->
+<img src="dhaba.png" alt="Deluxe Dhaba" class="bg-image">
+
+    <div class="overlay"></div>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-container">
+
+        <section class="hero">
+
+            <h1>
+                OLD VIBES<br>
+                LONG DRIVES
+            </h1>
+
+            <p>
+                Where Every Journey Has a Soundtrack.
+            </p>
+
+        </section>
+
+
+        <!-- CUSTOM MUSIC PLAYER -->
+        <div class="music-player">
+
+            <div class="player-header">
+                <span>OLD VIBES • LONG DRIVES</span>
+            </div>
+
+
+            <div class="player-content">
+
+                <div class="song-image">
+                    <img id="songThumbnail" src="" alt="Song">
+                </div>
+
+
+                <div class="song-info">
+
+                    <div id="songTitle" class="song-title">
+                        Loading playlist...
+                    </div>
+
+                    <div id="songArtist" class="song-artist">
+                        YouTube Music
+                    </div>
+
+                </div>
+
+
+                <div class="controls">
+
+                    <button
+                        id="previousBtn"
+                        class="control-btn"
+                        title="Previous"
+                    >
+                        ⏮
+                    </button>
+
+
+                    <button
+                        id="playBtn"
+                        class="play-btn"
+                        title="Play"
+                    >
+                        <span id="playIcon">▶</span>
+                    </button>
+
+
+                    <button
+                        id="nextBtn"
+                        class="control-btn"
+                        title="Next"
+                    >
+                        ⏭
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="progress-section">
+
+                <span id="currentTime">0:00</span>
+
+                <input
+                    type="range"
+                    id="progressBar"
+                    min="0"
+                    max="100"
+                    value="0"
+                >
+
+                <span id="duration">0:00</span>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!--
+        YouTube player.
+        Minimum 200x200 as required by YouTube IFrame API.
+        It is invisible to the user.
+    -->
+    <div id="youtube-player"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
