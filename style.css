@@ -115,7 +115,7 @@ body {
     position: absolute;
 
     left: 50%;
-    bottom: 100px;
+    bottom: 42px;
 
     transform: translateX(-50%);
 
@@ -495,5 +495,16 @@ body {
         height: 42px;
 
         font-size: 17px;
+    }
+}
+
+@media (max-width: 600px) {
+    .music-player {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        z-index: 1000;
     }
 }
