@@ -501,7 +501,7 @@ body {
 @media (max-width: 600px) {
     .music-player {
         position: fixed;
-        bottom: 20px;
+        bottom: 42px;
         left: 50%;
         transform: translateX(-50%);
         width: 90%;
