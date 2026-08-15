@@ -12,6 +12,16 @@ app.use(cors());
 
 app.use(express.static(__dirname));
 
+app.get("/robots.txt", (req, res) => {
+    res.type("text/plain");
+    res.sendFile(__dirname + "/robots.txt");
+});
+
+app.get("/sitemap.xml", (req, res) => {
+    res.type("application/xml");
+    res.sendFile(__dirname + "/sitemap.xml");
+});
+
 
 /* =====================================================
    GET PLAYLIST
