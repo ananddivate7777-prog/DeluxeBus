@@ -7,6 +7,62 @@
     <title>Deluxe Library</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <!-- Tera existing stuff -->
+
+    <style>
+        /* ENERGY PLAYLIST - DISCO LIGHT */
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+
+            pointer-events: none;
+            z-index: 2;
+
+            background:
+                radial-gradient(circle at 15% 20%,
+                    rgba(255, 0, 100, 0.35),
+                    transparent 25%),
+
+                radial-gradient(circle at 85% 25%,
+                    rgba(0, 200, 255, 0.35),
+                    transparent 25%),
+
+                radial-gradient(circle at 50% 80%,
+                    rgba(255, 220, 0, 0.3),
+                    transparent 25%),
+
+                radial-gradient(circle at 20% 80%,
+                    rgba(150, 0, 255, 0.3),
+                    transparent 25%);
+
+            mix-blend-mode: screen;
+
+            animation: discoLights 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes discoLights {
+
+            0% {
+                transform: scale(1);
+                filter: blur(5px);
+                opacity: 0.55;
+            }
+
+            50% {
+                transform: scale(1.15) translate(-3%, 3%);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.2) translate(2%, -3%);
+                opacity: 0.6;
+            }
+        }
+    </style>
+
 </head>
 
 <body>
@@ -15,7 +71,7 @@
 
     <div class="playlist-dropdown">
     <button class="playlist-btn" onclick="togglePlaylistMenu()">
-         ♫  Choose Your Playlist
+        ♫ Energy - Bollywood
         <span>▾</span>
     </button>
 
@@ -27,13 +83,13 @@
     <a href="HoneySingh.html">♬ Yo Yo Honey Singh</a>
     <a href="Lofi.html">◌ Lofi Vibes</a>
     <a href="Gym.html">♨ Gym Energy - Beats</a>
-    <a href="GymBollywood.html">♫ Energy - Bollywood</a>
+    <a href="GymBollywood.html">♫ Energy / Fun - Bollywood</a>
     <a href="Sad.html">♢ Sad Songs</a>
 </div>
 </div>
 
     <!-- BACKGROUND IMAGE -->
-<img src="oldvibe.png" alt="Deluxe Dhaba" class="bg-image">
+<img src="energy.png" alt="Deluxe Dhaba" class="bg-image">
 
     <div class="overlay"></div>
 
@@ -44,8 +100,8 @@
         <section class="hero">
 
             <h1>
-                OLD VIBES<br>
-                LONG DRIVES
+                MOOD ON<br>
+                WORLD GONE
             </h1>
 
             <p>
@@ -59,7 +115,7 @@
         <div class="music-player">
 
             <div class="player-header">
-                <span>OLD VIBES • LONG DRIVES</span>
+                <span>MUSIC • MOOD • MEMORIES</span>
             </div>
 
 
@@ -147,11 +203,10 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-    window.PLAYLIST_ID = "PLdYiyr7wnDPk";
-</script>
+        window.PLAYLIST_ID = "PLLiOJ1XeGnAg";
+    </script>
 
-<script src="script.js"></script>
-
+    <script src="script.js"></script>
 
 </body>
 </html>

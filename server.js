@@ -6,10 +6,7 @@ const app = express();
 
 const PORT = 3000;
 
-const PLAYLIST_ID = "PLdYiyr7wnDPk";
-
 const API_KEY = process.env.YOUTUBE_API_KEY;
-
 
 app.use(cors());
 
@@ -23,6 +20,24 @@ app.use(express.static(__dirname));
 app.get("/api/playlist", async (req, res) => {
 
     try {
+
+        /* Get playlist ID from the URL */
+
+        const playlistId = req.query.playlistId;
+
+
+        /* Check playlist ID */
+
+        if (!playlistId) {
+
+            return res.status(400).json({
+                error: "Playlist ID is required"
+            });
+
+        }
+
+
+        /* Check YouTube API key */
 
         if (!API_KEY) {
 
@@ -38,24 +53,29 @@ app.get("/api/playlist", async (req, res) => {
         let nextPageToken = "";
 
 
+        /* Get all playlist videos */
+
         do {
 
             const url =
                 "https://www.googleapis.com/youtube/v3/playlistItems" +
                 "?part=snippet,contentDetails" +
-                "&playlistId=" + PLAYLIST_ID +
+                "&playlistId=" + playlistId +
                 "&maxResults=50" +
                 "&key=" + API_KEY +
-                (nextPageToken
-                    ? "&pageToken=" + nextPageToken
-                    : "");
+                (
+                    nextPageToken
+                        ? "&pageToken=" + nextPageToken
+                        : ""
+                );
 
 
             const response = await fetch(url);
 
-
             const data = await response.json();
 
+
+            /* YouTube API error */
 
             if (!response.ok) {
 
@@ -65,12 +85,19 @@ app.get("/api/playlist", async (req, res) => {
 
 
                 return res.status(response.status).json({
-                    error: data.error?.message || "YouTube API error",
+
+                    error:
+                        data.error?.message ||
+                        "YouTube API error",
+
                     details: data
+
                 });
 
             }
 
+
+            /* Extract videos */
 
             for (const item of data.items || []) {
 
@@ -88,7 +115,9 @@ app.get("/api/playlist", async (req, res) => {
 
                         videoId: videoId,
 
-                        title: title || "Unknown Song"
+                        title:
+                            title ||
+                            "Unknown Song"
 
                     });
 
@@ -104,15 +133,24 @@ app.get("/api/playlist", async (req, res) => {
         } while (nextPageToken);
 
 
+        /* Console information */
+
         console.log(
-            "Playlist videos found:",
+            "Playlist:",
+            playlistId
+        );
+
+        console.log(
+            "Videos:",
             allVideos.length
         );
 
 
+        /* Send playlist to website */
+
         res.json({
 
-            playlistId: PLAYLIST_ID,
+            playlistId: playlistId,
 
             count: allVideos.length,
 
@@ -146,18 +184,33 @@ app.get("/api/playlist", async (req, res) => {
 app.listen(PORT, () => {
 
     console.log("");
-    console.log("====================================");
-    console.log(" HORN OK PLEASE SERVER");
-    console.log("====================================");
+
+    console.log(
+        "===================================="
+    );
+
+    console.log(
+        " HORN OK PLEASE SERVER"
+    );
+
+    console.log(
+        "===================================="
+    );
+
     console.log(
         "Website: http://localhost:" + PORT
     );
+
     console.log(
         "Playlist API: http://localhost:" +
         PORT +
         "/api/playlist"
     );
-    console.log("====================================");
+
+    console.log(
+        "===================================="
+    );
+
     console.log("");
 
 });

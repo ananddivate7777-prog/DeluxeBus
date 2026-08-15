@@ -71,7 +71,7 @@ body {
 
     text-align: center;
 
-    margin-bottom: 200px;
+    margin-bottom: 150px;
 }
 
 
@@ -81,7 +81,7 @@ body {
 
     font-size: clamp(35px, 9vw, 70px);
 
-    line-height: 0.60;
+    line-height: 0.90;
 
     font-weight: 900;
 
@@ -95,7 +95,7 @@ body {
 
 .hero p {
 
-    margin-top: 40px;
+    margin-top: 25px;
 
     color: #f1df96;
 
@@ -506,5 +506,469 @@ body {
         transform: translateX(-50%);
         width: 90%;
         z-index: 1000;
+    }
+}
+
+/* =========================================
+   🎵 PREMIUM PLAYLIST DROPDOWN
+========================================= */
+
+.playlist-dropdown {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 99999;
+    font-family: inherit;
+    
+}
+
+
+/* =========================================
+   MAIN BUTTON
+========================================= */
+
+.playlist-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    min-width: 270px;
+    padding: 13px 17px;
+
+    /* GLASS BLUR BACKGROUND */
+    background: rgba(255, 255, 255, 0.15);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    color: #ffffff;
+
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 18px;
+
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    transition:
+        background 0.25s ease,
+        transform 0.25s ease,
+        border-color 0.25s ease;
+}
+
+
+/* Hover */
+
+.playlist-btn:hover {
+    background: rgba(30, 30, 30, 0.55);
+
+    border-color:
+        rgba(255, 255, 255, 0.35);
+
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   DROPDOWN MENU
+========================================= */
+
+.playlist-menu {
+    display: none;
+
+    position: absolute;
+    top: 58px;
+    left: 12;
+
+    width: 270px;
+    max-height: 420px;
+
+    padding: 8px;
+
+    /* GLASS / BLUR BACKGROUND */
+    background: rgba(255, 255, 255, 0.15);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    overflow-y: auto;
+
+    animation: playlistDrop 0.22s ease;
+}
+
+
+/* Dropdown opening animation */
+
+@keyframes playlistDrop {
+
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================
+   PLAYLIST ITEMS
+========================================= */
+
+.playlist-menu a {
+    display: flex;
+    align-items: center;
+
+    min-height: 44px;
+    padding: 10px 13px;
+    margin: 2px 0;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    text-decoration: none;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    letter-spacing: 0.1px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        padding-left 0.2s ease;
+}
+
+
+/* Hover */
+
+.playlist-menu a:hover {
+    background: rgba(255, 255, 255, 0.11);
+    color: #ffffff;
+    padding-left: 17px;
+}
+
+
+/* Active / pressed */
+
+.playlist-menu a:active {
+    background: rgba(255, 255, 255, 0.17);
+}
+
+
+/* =========================================
+   HIDE SCROLLBAR
+========================================= */
+
+/* Chrome / Edge / Safari */
+
+.playlist-menu::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+/* Firefox */
+
+.playlist-menu {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .playlist-dropdown {
+        top: 12px;
+        left: 12px;
+    }
+
+    .playlist-btn {
+        min-width: 215px;
+
+        padding: 10px 13px;
+
+        font-size: 12px;
+
+        border-radius: 12px;
+    }
+
+    .playlist-menu {
+        top: 50px;
+
+        width: 235px;
+        max-height: 330px;
+
+        padding: 7px;
+
+        border-radius: 14px;
+    }
+
+    .playlist-menu a {
+        min-height: 40px;
+
+        padding: 9px 11px;
+
+        font-size: 13px;
+    }
+
+    .playlist-menu a:hover {
+        padding-left: 14px;
+    }
+}
+
+.playlist-menu a.current-playlist {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.20);
+}
+
+.playlist-menu a.current-playlist:hover {
+    background: rgba(255, 255, 255, 0.16);
+    padding-left: 13px;
+    cursor: default;
+}
+
+/* BEST OF stylish font */
+.best-of {
+    font-family: cursive;
+    font-weight: normal;
+    font-size: 70px;
+    letter-spacing: 1px;
+}
+
+/* Tumhara existing CSS */
+
+/* ...saara existing code... */
+
+
+/* 👇 YAHAN SE PASTE KARNA HAI 👇 */
+
+.progress-bar {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+
+    background: repeating-linear-gradient(
+        135deg,
+        transparent 0px,
+        transparent 6px,
+        rgba(255, 255, 255, 0.7) 7px,
+        rgba(255, 255, 255, 0.7) 9px,
+        transparent 10px,
+        transparent 16px
+    );
+
+    animation: zigzagMove 1.2s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes zigzagMove {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(50%);
+    }
+}
+
+.song-image img {
+    border-radius: 50%;
+    border: 2px solid rgb(244, 239, 239);
+    box-sizing: border-box;
+}
+
+.song-image.playing img {
+    animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =========================================
+   DELUXE LOGO + PLAYLIST DROPDOWN
+========================================= */
+
+.deluxe-logo {
+    position: fixed;
+
+    top: 20px;
+    left: 20px;
+
+    width: 70px;
+    height: 70px;
+
+    object-fit: contain;
+
+    z-index: 99999;
+}
+
+
+/* Dropdown logo ke side me */
+
+.playlist-dropdown {
+    position: fixed;
+
+    top: 20px;
+    left: 100px;
+
+    z-index: 99999;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .deluxe-logo {
+        top: 12px;
+        left: 12px;
+
+        width: 55px;
+        height: 55px;
+    }
+
+    .playlist-dropdown {
+        top: 12px;
+        left: 72px;
+    }
+
+    .playlist-btn {
+        min-width: 215px;
+
+        padding: 10px 13px;
+
+        font-size: 12px;
+
+        border-radius: 12px;
+    }
+
+    .playlist-menu {
+        top: 50px;
+        width: 235px;
+    }
+}
+
+.playlist-dropdown {
+    top: 32px;
+}
+
+@media (max-width: 600px) {
+    .playlist-dropdown {
+        top: 19px;
+    }
+}
+
+#bgChangeBtn {
+    position: fixed;
+    top: 32px;
+    right: 32px;
+
+    padding: 9px 18px;
+
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+    z-index: 9999;
+}
+
+#bgChangeBtn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: scale(1.05);
+}
+
+#bgChangeBtn:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 600px) {
+    #bgChangeBtn {
+        top: 15px;
+        right: 15px;
+
+        padding: 8px 14px;
+        font-size: 11px;
+    }
+}
+
+#bgChangeBtn {
+    animation: buttonBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes buttonBlink {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+    }
+}
+
+#bgChangeBtn {
+    animation: buttonBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes buttonBlink {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
     }
 }

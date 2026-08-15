@@ -15,7 +15,7 @@
 
     <div class="playlist-dropdown">
     <button class="playlist-btn" onclick="togglePlaylistMenu()">
-         ♫  Choose Your Playlist
+        ◌ Lofi Vibes
         <span>▾</span>
     </button>
 
@@ -27,13 +27,13 @@
     <a href="HoneySingh.html">♬ Yo Yo Honey Singh</a>
     <a href="Lofi.html">◌ Lofi Vibes</a>
     <a href="Gym.html">♨ Gym Energy - Beats</a>
-    <a href="GymBollywood.html">♫ Energy - Bollywood</a>
+    <a href="GymBollywood.html">♫ Energy / Fun - Bollywood</a>
     <a href="Sad.html">♢ Sad Songs</a>
 </div>
 </div>
 
     <!-- BACKGROUND IMAGE -->
-<img src="oldvibe.png" alt="Deluxe Dhaba" class="bg-image">
+<img src="Lofi.png" alt="Deluxe Dhaba" class="bg-image">
 
     <div class="overlay"></div>
 
@@ -44,8 +44,8 @@
         <section class="hero">
 
             <h1>
-                OLD VIBES<br>
-                LONG DRIVES
+                EARS AT WORK<br>
+                MIND AT PEACE
             </h1>
 
             <p>
@@ -59,7 +59,7 @@
         <div class="music-player">
 
             <div class="player-header">
-                <span>OLD VIBES • LONG DRIVES</span>
+                <span>MUSIC • MOOD • MEMORIES</span>
             </div>
 
 
@@ -147,11 +147,37 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-    window.PLAYLIST_ID = "PLdYiyr7wnDPk";
+        window.PLAYLIST_ID = "PLa_nwnii28lY";
+    </script>
+
+    <button id="bgChangeBtn">DAY</button>
+
+<img src="Lofi.png" hidden>
+<img src="rain.png" hidden>
+<img src="night.png" hidden>
+
+<script>
+    const backgrounds = [
+        "Lofi.png",
+        "rain.png",
+        "night.png"
+    ];
+
+    const modes = ["DAY", "RAIN", "NIGHT"];
+
+    let bgIndex = 0;
+
+    document.getElementById("bgChangeBtn").onclick = function () {
+
+        bgIndex = (bgIndex + 1) % backgrounds.length;
+
+        document.querySelector(".bg-image").src = backgrounds[bgIndex];
+
+        this.textContent = modes[bgIndex];
+    };
 </script>
 
-<script src="script.js"></script>
-
+    <script src="script.js"></script>
 
 </body>
 </html>

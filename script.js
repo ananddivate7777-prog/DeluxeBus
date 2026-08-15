@@ -26,7 +26,11 @@ async function loadPlaylistFromServer() {
         console.log("Getting playlist...");
 
 
-        const response = await fetch("/api/playlist");
+        const playlistId = window.PLAYLIST_ID || "";
+
+const response = await fetch(
+    `/api/playlist?playlistId=${encodeURIComponent(playlistId)}`
+);
 
 
         if (!response.ok) {
@@ -394,13 +398,27 @@ document
             );
 
 
-            player.nextVideo();
+            const nextIndex = currentVideoIndex + 1;
 
+if (nextIndex >= videoList.length) {
 
-            setTimeout(
-                updateCurrentSong,
-                700
-            );
+    // Last song ke baad first song
+    currentVideoIndex = 0;
+
+    player.playVideoAt(0);
+
+} else {
+
+    currentVideoIndex = nextIndex;
+
+    player.playVideoAt(currentVideoIndex);
+
+}
+
+setTimeout(
+    updateCurrentSong,
+    700
+);
 
         }
     );
@@ -431,6 +449,7 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "❚❚";
 
+        document.querySelector(".song-image").classList.add("playing");
 
         updateCurrentSong();
 
@@ -450,6 +469,9 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "▶";
 
+        document.querySelector(".song-image")
+    .classList.remove("playing");
+
     }
 
 
@@ -466,6 +488,8 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "▶";
 
+        document.querySelector(".song-image")
+    .classList.remove("playing");
 
         updateCurrentSong();
 
@@ -485,6 +509,8 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "▶";
 
+        document.querySelector(".song-image")
+    .classList.remove("playing");
 
         updateCurrentSong();
 
@@ -1006,3 +1032,63 @@ function onPlayerError(event) {
    ========================================================= */
 
 loadPlaylistFromServer();
+
+function togglePlaylistMenu() {
+    const menu = document.getElementById("playlistMenu");
+
+    if (menu.style.display === "block") {
+        menu.style.display = "none";
+    } else {
+        menu.style.display = "block";
+    }
+}
+
+// Menu ke bahar click karne par close
+document.addEventListener("click", function(event) {
+    const dropdown = document.querySelector(".playlist-dropdown");
+
+    if (!dropdown.contains(event.target)) {
+        document.getElementById("playlistMenu").style.display = "none";
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const currentPage =
+        window.location.pathname
+            .split("/")
+            .pop()
+            .toLowerCase();
+
+    const playlistLinks =
+        document.querySelectorAll(".playlist-menu a");
+
+    playlistLinks.forEach(function (link) {
+
+        const linkPage =
+            link.getAttribute("href")
+                .split("/")
+                .pop()
+                .toLowerCase();
+
+
+        /* Current playlist */
+
+        if (linkPage === currentPage) {
+
+            link.classList.add("current-playlist");
+
+
+            /* Stop page reload */
+
+            link.addEventListener("click", function (event) {
+
+                event.preventDefault();
+
+            });
+
+        }
+
+    });
+
+});
