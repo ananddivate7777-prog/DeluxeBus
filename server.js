@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const app = express();
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const API_KEY = process.env.YOUTUBE_API_KEY;
 
@@ -174,6 +174,14 @@ app.get("/api/playlist", async (req, res) => {
 
     }
 
+});
+
+app.get("/robots.txt", (req, res) => {
+    res.sendFile(__dirname + "/robots.txt");
+});
+
+app.get("/sitemap.xml", (req, res) => {
+    res.sendFile(__dirname + "/sitemap.xml");
 });
 
 
