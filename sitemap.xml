@@ -2,9 +2,39 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
     <url>
-        <loc>https://deluxebus.onrender.com/</loc>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
+        <loc>https://deluxelibrary.onrender.com/</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/oldLofi.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/Arijit.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/Rahman.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/HoneySingh.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/Lofi.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/Gym.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/GymBollywood.html</loc>
+    </url>
+
+    <url>
+        <loc>https://deluxelibrary.onrender.com/Sad.html</loc>
     </url>
 
 </urlset>
