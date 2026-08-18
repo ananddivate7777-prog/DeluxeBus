@@ -3,20 +3,17 @@
    ========================================================= */
 
 let player = null;
-
 let playerReady = false;
 
 let videoList = [];
-
 let currentVideoIndex = 0;
 
 let progressTimer = null;
-
 let lastVideoId = "";
 
 
 /* =========================================================
-   1. GET PLAYLIST FROM OUR BACKEND
+   1. GET PLAYLIST FROM SERVER
    ========================================================= */
 
 async function loadPlaylistFromServer() {
@@ -25,34 +22,36 @@ async function loadPlaylistFromServer() {
 
         console.log("Getting playlist...");
 
+        const playlistId =
+            window.PLAYLIST_ID || "";
 
-        const playlistId = window.PLAYLIST_ID || "";
+        if (!playlistId) {
 
-const response = await fetch(
-    `/api/playlist?playlistId=${encodeURIComponent(playlistId)}`
-);
+            throw new Error(
+                "PLAYLIST_ID is missing"
+            );
 
+        }
+
+        const response = await fetch(
+            `/api/playlist?playlistId=${encodeURIComponent(playlistId)}`
+        );
+
+        const data = await response.json();
 
         if (!response.ok) {
 
-            const errorData = await response.json();
-
             throw new Error(
-                errorData.error ||
+                data.error ||
                 "Playlist API failed"
             );
 
         }
 
-
-        const data = await response.json();
-
-
         console.log(
             "Playlist received:",
             data
         );
-
 
         if (
             !data.videos ||
@@ -60,36 +59,46 @@ const response = await fetch(
         ) {
 
             throw new Error(
-                "Playlist has no playable videos"
+                "Playlist has no videos"
             );
 
         }
 
-
         /*
-           Store complete playlist
+           Store playlist
         */
 
-        videoList = data.videos;
-
+        videoList = data.videos.filter(
+            video =>
+                video &&
+                video.videoId &&
+                video.title !== "Deleted video"
+        );
 
         console.log(
-            "Total songs:",
+            "Playable candidates:",
             videoList.length
         );
 
+        if (
+            videoList.length === 0
+        ) {
+
+            throw new Error(
+                "No playable videos found"
+            );
+
+        }
 
         /*
-           If YouTube player is already ready,
-           load playlist immediately.
+           If player already ready
         */
 
         if (playerReady) {
 
-            loadVideosIntoPlayer();
+            startPlaylist();
 
         }
-
 
     } catch (error) {
 
@@ -98,15 +107,19 @@ const response = await fetch(
             error
         );
 
+        const title =
+            document.getElementById("songTitle");
 
-        document.getElementById("songTitle")
-            .textContent =
-            "Playlist loading failed";
+        const artist =
+            document.getElementById("songArtist");
 
+        if (title)
+            title.textContent =
+                "Playlist loading failed";
 
-        document.getElementById("songArtist")
-            .textContent =
-            error.message;
+        if (artist)
+            artist.textContent =
+                error.message;
 
     }
 
@@ -123,34 +136,24 @@ function onYouTubeIframeAPIReady() {
         "YouTube IFrame API ready"
     );
 
-
     player = new YT.Player(
         "youtube-player",
         {
 
             width: "200",
-
             height: "200",
-
 
             playerVars: {
 
                 autoplay: 0,
-
                 controls: 0,
-
                 disablekb: 1,
-
                 playsinline: 1,
-
                 rel: 0,
-
                 enablejsapi: 1,
-
                 origin: window.location.origin
 
             },
-
 
             events: {
 
@@ -181,22 +184,15 @@ function onPlayerReady() {
         "YouTube player ready"
     );
 
-
     playerReady = true;
-
-
-    /*
-       Playlist may already have arrived
-    */
 
     if (
         videoList.length > 0
     ) {
 
-        loadVideosIntoPlayer();
+        startPlaylist();
 
     }
-
 
     startProgressTimer();
 
@@ -204,10 +200,10 @@ function onPlayerReady() {
 
 
 /* =========================================================
-   4. LOAD VIDEO IDs INTO YOUTUBE PLAYER
+   4. START PLAYLIST
    ========================================================= */
 
-function loadVideosIntoPlayer() {
+function startPlaylist() {
 
     if (
         !player ||
@@ -219,75 +215,116 @@ function loadVideosIntoPlayer() {
 
     }
 
-
     /*
-       Extract only video IDs
+       Random starting song
     */
 
-    const videoIds =
-        videoList.map(
-            function (video) {
-
-                return video.videoId;
-
-            }
+    currentVideoIndex =
+        Math.floor(
+            Math.random() *
+            videoList.length
         );
 
-
     console.log(
-        "Loading",
-        videoIds.length,
-        "videos into YouTube player"
+        "Starting index:",
+        currentVideoIndex
     );
 
-
-    /*
-       Cue playlist first.
-
-       It does NOT automatically start playing.
-       User will press Play.
-    */
-
-    // Pick a random song every time the website opens
-const randomIndex =
-    Math.floor(Math.random() * videoIds.length);
-
-console.log(
-    "Random song index:",
-    randomIndex
-);
-
-player.cuePlaylist(
-    videoIds,
-    randomIndex,
-    0
-);
-
-currentVideoIndex = randomIndex;
-
-
-    currentVideoIndex = 0;
-
-
-    /*
-       Give YouTube time to load
-       first video's metadata.
-    */
-
-    setTimeout(
-        function () {
-
-            updateCurrentSong();
-
-        },
-        1000
-    );
+    playCurrentVideo(false);
 
 }
 
 
 /* =========================================================
-   5. PLAY / PAUSE
+   5. PLAY CURRENT VIDEO
+   ========================================================= */
+
+function playCurrentVideo(autoplay = false) {
+
+    if (
+        !playerReady ||
+        !player ||
+        videoList.length === 0
+    ) {
+
+        return;
+
+    }
+
+    /*
+       Safety
+    */
+
+    if (
+        currentVideoIndex < 0
+    ) {
+
+        currentVideoIndex = 0;
+
+    }
+
+    if (
+        currentVideoIndex >=
+        videoList.length
+    ) {
+
+        currentVideoIndex = 0;
+
+    }
+
+    const video =
+        videoList[currentVideoIndex];
+
+    if (
+        !video ||
+        !video.videoId
+    ) {
+
+        goToNextVideo();
+
+        return;
+
+    }
+
+    console.log(
+        "Loading video:",
+        video.videoId,
+        video.title
+    );
+
+    lastVideoId = "";
+
+    /*
+       Show title immediately
+    */
+
+    updateSongText(video);
+
+    /*
+       IMPORTANT:
+       Do NOT use cuePlaylist().
+       Load only one video.
+    */
+
+    if (autoplay) {
+
+        player.loadVideoById(
+            video.videoId
+        );
+
+    } else {
+
+        player.cueVideoById(
+            video.videoId
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   6. PLAY / PAUSE
    ========================================================= */
 
 document
@@ -297,7 +334,8 @@ document
         function () {
 
             if (
-                !playerReady
+                !playerReady ||
+                !player
             ) {
 
                 console.log(
@@ -308,14 +346,8 @@ document
 
             }
 
-
             const state =
                 player.getPlayerState();
-
-
-            /*
-               Currently playing
-            */
 
             if (
                 state ===
@@ -324,14 +356,7 @@ document
 
                 player.pauseVideo();
 
-            }
-
-
-            /*
-               Currently paused / cued / stopped
-            */
-
-            else {
+            } else {
 
                 player.playVideo();
 
@@ -342,7 +367,7 @@ document
 
 
 /* =========================================================
-   6. PREVIOUS SONG
+   7. PREVIOUS SONG
    ========================================================= */
 
 document
@@ -355,31 +380,30 @@ document
                 !playerReady
             ) return;
 
+            currentVideoIndex--;
+
+            if (
+                currentVideoIndex < 0
+            ) {
+
+                currentVideoIndex =
+                    videoList.length - 1;
+
+            }
 
             console.log(
-                "Previous button clicked"
+                "Previous:",
+                currentVideoIndex
             );
 
-
-            player.previousVideo();
-
-
-            /*
-               Update information after
-               YouTube changes video.
-            */
-
-            setTimeout(
-                updateCurrentSong,
-                700
-            );
+            playCurrentVideo(true);
 
         }
     );
 
 
 /* =========================================================
-   7. NEXT SONG
+   8. NEXT SONG
    ========================================================= */
 
 document
@@ -392,40 +416,53 @@ document
                 !playerReady
             ) return;
 
-
-            console.log(
-                "Next button clicked"
-            );
-
-
-            const nextIndex = currentVideoIndex + 1;
-
-if (nextIndex >= videoList.length) {
-
-    // Last song ke baad first song
-    currentVideoIndex = 0;
-
-    player.playVideoAt(0);
-
-} else {
-
-    currentVideoIndex = nextIndex;
-
-    player.playVideoAt(currentVideoIndex);
-
-}
-
-setTimeout(
-    updateCurrentSong,
-    700
-);
+            goToNextVideo();
 
         }
     );
 
 
 /* =========================================================
-   8. YOUTUBE PLAYER STATE
+   9. NEXT VIDEO FUNCTION
+   ========================================================= */
+
+function goToNextVideo() {
+
+    if (
+        videoList.length === 0
+    ) {
+
+        return;
+
+    }
+
+    currentVideoIndex++;
+
+    /*
+       Last song → first song
+    */
+
+    if (
+        currentVideoIndex >=
+        videoList.length
+    ) {
+
+        currentVideoIndex = 0;
+
+    }
+
+    console.log(
+        "Next:",
+        currentVideoIndex
+    );
+
+    playCurrentVideo(true);
+
+}
+
+
+/* =========================================================
+   10. YOUTUBE PLAYER STATE
    ========================================================= */
 
 function onPlayerStateChange(event) {
@@ -449,7 +486,18 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "❚❚";
 
-        document.querySelector(".song-image").classList.add("playing");
+        const image =
+            document.querySelector(
+                ".song-image"
+            );
+
+        if (image) {
+
+            image.classList.add(
+                "playing"
+            );
+
+        }
 
         updateCurrentSong();
 
@@ -469,8 +517,18 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "▶";
 
-        document.querySelector(".song-image")
-    .classList.remove("playing");
+        const image =
+            document.querySelector(
+                ".song-image"
+            );
+
+        if (image) {
+
+            image.classList.remove(
+                "playing"
+            );
+
+        }
 
     }
 
@@ -488,10 +546,24 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "▶";
 
-        document.querySelector(".song-image")
-    .classList.remove("playing");
+        const image =
+            document.querySelector(
+                ".song-image"
+            );
 
-        updateCurrentSong();
+        if (image) {
+
+            image.classList.remove(
+                "playing"
+            );
+
+        }
+
+        /*
+           Automatically play next
+        */
+
+        goToNextVideo();
 
     }
 
@@ -509,8 +581,18 @@ function onPlayerStateChange(event) {
             "playIcon"
         ).textContent = "▶";
 
-        document.querySelector(".song-image")
-    .classList.remove("playing");
+        const image =
+            document.querySelector(
+                ".song-image"
+            );
+
+        if (image) {
+
+            image.classList.remove(
+                "playing"
+            );
+
+        }
 
         updateCurrentSong();
 
@@ -520,7 +602,7 @@ function onPlayerStateChange(event) {
 
 
 /* =========================================================
-   9. UPDATE CURRENT SONG
+   11. UPDATE CURRENT SONG
    ========================================================= */
 
 function updateCurrentSong() {
@@ -534,12 +616,10 @@ function updateCurrentSong() {
 
     }
 
-
     try {
 
         const videoData =
             player.getVideoData();
-
 
         if (
             !videoData ||
@@ -550,13 +630,11 @@ function updateCurrentSong() {
 
         }
 
-
         const videoId =
             videoData.video_id;
 
-
         /*
-           Find current video index
+           Find index
         */
 
         const foundIndex =
@@ -571,7 +649,6 @@ function updateCurrentSong() {
                 }
             );
 
-
         if (
             foundIndex !== -1
         ) {
@@ -581,10 +658,8 @@ function updateCurrentSong() {
 
         }
 
-
         /*
-           Don't update same song
-           unnecessarily.
+           Don't update same video
         */
 
         if (
@@ -595,45 +670,30 @@ function updateCurrentSong() {
 
         }
 
+        lastVideoId =
+            videoId;
 
-        lastVideoId = videoId;
-
-
-        /*
-           Song title
-        */
+        const video =
+            videoList[currentVideoIndex];
 
         const title =
             videoData.title ||
-            (
-                videoList[currentVideoIndex]
-                ?.title ||
-                "Unknown Song"
-            );
-
-
-        /*
-           Artist / channel
-        */
+            video?.title ||
+            "Unknown Song";
 
         const artist =
             videoData.author ||
             "YouTube Music";
 
-
         document.getElementById(
             "songTitle"
-        ).textContent = title;
-
+        ).textContent =
+            title;
 
         document.getElementById(
             "songArtist"
-        ).textContent = artist;
-
-
-        /*
-           Thumbnail
-        */
+        ).textContent =
+            artist;
 
         document.getElementById(
             "songThumbnail"
@@ -642,12 +702,10 @@ function updateCurrentSong() {
             videoId +
             "/hqdefault.jpg";
 
-
         console.log(
             "Now playing:",
             title
         );
-
 
     } catch (error) {
 
@@ -662,13 +720,12 @@ function updateCurrentSong() {
 
 
 /* =========================================================
-   10. UPDATE SONG TEXT FROM API
+   12. UPDATE SONG TEXT
    ========================================================= */
 
 function updateSongText(video) {
 
     if (!video) return;
-
 
     document.getElementById(
         "songTitle"
@@ -676,12 +733,10 @@ function updateSongText(video) {
         video.title ||
         "Horn OK Please";
 
-
     document.getElementById(
         "songArtist"
     ).textContent =
         "Press ▶ to play";
-
 
     if (
         video.videoId
@@ -700,7 +755,7 @@ function updateSongText(video) {
 
 
 /* =========================================================
-   11. PROGRESS BAR
+   13. PROGRESS TIMER
    ========================================================= */
 
 function startProgressTimer() {
@@ -715,73 +770,11 @@ function startProgressTimer() {
 
     }
 
-
     progressTimer =
         setInterval(
             function () {
 
-                if (
-                    !playerReady ||
-                    !player
-                ) {
-
-                    return;
-
-                }
-
-
-                try {
-
-                    const current =
-                        player.getCurrentTime();
-
-
-                    const duration =
-                        player.getDuration();
-
-
-                    if (
-                        duration > 0
-                    ) {
-
-                        const percentage =
-                            (
-                                current /
-                                duration
-                            ) * 100;
-
-
-                        document.getElementById(
-                            "progressBar"
-                        ).value =
-                            percentage;
-
-
-                        document.getElementById(
-                            "currentTime"
-                        ).textContent =
-                            formatTime(
-                                current
-                            );
-
-
-                        document.getElementById(
-                            "duration"
-                        ).textContent =
-                            formatTime(
-                                duration
-                            );
-
-                    }
-
-                } catch (error) {
-
-                    /*
-                       Ignore temporary
-                       YouTube loading errors.
-                    */
-
-                }
+                updateProgressBar();
 
             },
             500
@@ -791,7 +784,85 @@ function startProgressTimer() {
 
 
 /* =========================================================
-   12. SEEK / PROGRESS BAR
+   14. PROGRESS BAR
+   ========================================================= */
+
+function updateProgressBar() {
+
+    if (
+        !playerReady ||
+        !player
+    ) {
+
+        return;
+
+    }
+
+    try {
+
+        const duration =
+            player.getDuration();
+
+        const currentTime =
+            player.getCurrentTime();
+
+        if (
+            !duration ||
+            duration <= 0
+        ) {
+
+            return;
+
+        }
+
+        const percentage =
+            (
+                currentTime /
+                duration
+            ) * 100;
+
+        const progressBar =
+            document.getElementById(
+                "progressBar"
+            );
+
+        progressBar.value =
+            percentage;
+
+        progressBar.style.background =
+            `linear-gradient(
+                to right,
+                #faf9f7 ${percentage}%,
+                rgba(255,255,255,0.3) ${percentage}%
+            )`;
+
+        document.getElementById(
+            "currentTime"
+        ).textContent =
+            formatTime(
+                currentTime
+            );
+
+        document.getElementById(
+            "duration"
+        ).textContent =
+            formatTime(
+                duration
+            );
+
+    } catch (error) {
+
+        /*
+           Ignore temporary errors
+        */
+
+    }
+
+}
+
+
+/* =========================================================
+   15. SEEK
    ========================================================= */
 
 document
@@ -805,27 +876,22 @@ document
                 !player
             ) return;
 
-
             const duration =
                 player.getDuration();
-
 
             if (
                 !duration ||
                 duration <= 0
             ) return;
 
-
             const percentage =
                 Number(this.value);
-
 
             const newTime =
                 duration *
                 (
                     percentage / 100
                 );
-
 
             player.seekTo(
                 newTime,
@@ -835,59 +901,9 @@ document
         }
     );
 
-    /* =========================================================
-   12.1. UPDATE PROGRESS BAR
-   ========================================================= */
-
-function updateProgressBar() {
-
-    if (
-        !playerReady ||
-        !player
-    ) return;
-
-    const duration =
-        player.getDuration();
-
-    const currentTime =
-        player.getCurrentTime();
-
-    if (
-        !duration ||
-        duration <= 0
-    ) return;
-
-    const percentage =
-        (currentTime / duration) * 100;
-
-
-    const progressBar =
-        document.getElementById("progressBar");
-
-
-    progressBar.value =
-        percentage;
-
-
-    progressBar.style.background =
-        `linear-gradient(
-            to right,
-            #faf9f7 ${percentage}%,
-            rgba(255,255,255,0.3) ${percentage}%
-        )`;
-}
-
-
-/* Update every 500 milliseconds */
-
-setInterval(
-    updateProgressBar,
-    500
-);
-
 
 /* =========================================================
-   13. FORMAT TIME
+   16. FORMAT TIME
    ========================================================= */
 
 function formatTime(seconds) {
@@ -901,20 +917,16 @@ function formatTime(seconds) {
 
     }
 
-
     seconds =
         Math.floor(seconds);
-
 
     const minutes =
         Math.floor(
             seconds / 60
         );
 
-
     const remainingSeconds =
         seconds % 60;
-
 
     return (
         minutes +
@@ -928,50 +940,33 @@ function formatTime(seconds) {
 
 
 /* =========================================================
-   14. YOUTUBE ERROR
+   17. YOUTUBE ERROR HANDLER
    ========================================================= */
 
 function onPlayerError(event) {
 
     console.error(
-        "YouTube Error:",
+        "YouTube Player Error:",
         event.data
     );
 
+    const errorCode =
+        event.data;
 
     /*
-       Error 101 / 150:
-       Embedding is disabled for this video.
-
-       Automatically skip to next song.
+       100 =
+       Video unavailable / deleted
     */
 
     if (
-        event.data === 101 ||
-        event.data === 150
+        errorCode === 100
     ) {
 
-        document.getElementById(
-            "songTitle"
-        ).textContent =
-            "Skipping unavailable song...";
-
-
-        document.getElementById(
-            "songArtist"
-        ).textContent =
-            "This video cannot be embedded";
-
-
-        setTimeout(
-            function () {
-
-                player.nextVideo();
-
-            },
-            800
+        console.log(
+            "Video unavailable. Skipping..."
         );
 
+        skipUnavailableVideo();
 
         return;
 
@@ -979,29 +974,20 @@ function onPlayerError(event) {
 
 
     /*
-       Error 100:
-       Video unavailable/private/deleted
+       101 / 150 =
+       Embedding disabled
     */
 
     if (
-        event.data === 100
+        errorCode === 101 ||
+        errorCode === 150
     ) {
 
-        document.getElementById(
-            "songTitle"
-        ).textContent =
-            "Song unavailable";
-
-
-        setTimeout(
-            function () {
-
-                player.nextVideo();
-
-            },
-            800
+        console.log(
+            "Embedding disabled. Skipping..."
         );
 
+        skipUnavailableVideo();
 
         return;
 
@@ -1009,7 +995,27 @@ function onPlayerError(event) {
 
 
     /*
-       Other error
+       Error 2 =
+       Invalid video ID
+    */
+
+    if (
+        errorCode === 2
+    ) {
+
+        console.log(
+            "Invalid video ID. Skipping..."
+        );
+
+        skipUnavailableVideo();
+
+        return;
+
+    }
+
+
+    /*
+       Other errors
     */
 
     document.getElementById(
@@ -1017,78 +1023,166 @@ function onPlayerError(event) {
     ).textContent =
         "Unable to play this song";
 
-
     document.getElementById(
         "songArtist"
     ).textContent =
         "YouTube error " +
-        event.data;
+        errorCode;
 
 }
 
 
 /* =========================================================
-   15. START EVERYTHING
+   18. SKIP UNAVAILABLE VIDEO
+   ========================================================= */
+
+function skipUnavailableVideo() {
+
+    document.getElementById(
+        "songTitle"
+    ).textContent =
+        "Skipping unavailable song...";
+
+    document.getElementById(
+        "songArtist"
+    ).textContent =
+        "Trying next song";
+
+    /*
+       Don't get stuck
+    */
+
+    setTimeout(
+        function () {
+
+            goToNextVideo();
+
+        },
+        500
+    );
+
+}
+
+
+/* =========================================================
+   19. START
    ========================================================= */
 
 loadPlaylistFromServer();
 
-function togglePlaylistMenu() {
-    const menu = document.getElementById("playlistMenu");
 
-    if (menu.style.display === "block") {
-        menu.style.display = "none";
+/* =========================================================
+   20. PLAYLIST DROPDOWN
+   ========================================================= */
+
+function togglePlaylistMenu() {
+
+    const menu =
+        document.getElementById(
+            "playlistMenu"
+        );
+
+    if (
+        menu.style.display ===
+        "block"
+    ) {
+
+        menu.style.display =
+            "none";
+
     } else {
-        menu.style.display = "block";
+
+        menu.style.display =
+            "block";
+
     }
+
 }
 
-// Menu ke bahar click karne par close
-document.addEventListener("click", function(event) {
-    const dropdown = document.querySelector(".playlist-dropdown");
 
-    if (!dropdown.contains(event.target)) {
-        document.getElementById("playlistMenu").style.display = "none";
+/* =========================================================
+   21. CLOSE DROPDOWN OUTSIDE CLICK
+   ========================================================= */
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const dropdown =
+            document.querySelector(
+                ".playlist-dropdown"
+            );
+
+        if (
+            dropdown &&
+            !dropdown.contains(
+                event.target
+            )
+        ) {
+
+            document.getElementById(
+                "playlistMenu"
+            ).style.display =
+                "none";
+
+        }
+
     }
-});
+);
 
-document.addEventListener("DOMContentLoaded", function () {
 
-    const currentPage =
-        window.location.pathname
-            .split("/")
-            .pop()
-            .toLowerCase();
+/* =========================================================
+   22. CURRENT PLAYLIST
+   ========================================================= */
 
-    const playlistLinks =
-        document.querySelectorAll(".playlist-menu a");
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-    playlistLinks.forEach(function (link) {
-
-        const linkPage =
-            link.getAttribute("href")
+        const currentPage =
+            window.location.pathname
                 .split("/")
                 .pop()
                 .toLowerCase();
 
+        const playlistLinks =
+            document.querySelectorAll(
+                ".playlist-menu a"
+            );
 
-        /* Current playlist */
+        playlistLinks.forEach(
+            function (link) {
 
-        if (linkPage === currentPage) {
+                const linkPage =
+                    link.getAttribute(
+                        "href"
+                    )
+                    .split("/")
+                    .pop()
+                    .toLowerCase();
 
-            link.classList.add("current-playlist");
+                if (
+                    linkPage ===
+                    currentPage
+                ) {
 
+                    link.classList.add(
+                        "current-playlist"
+                    );
 
-            /* Stop page reload */
+                    link.addEventListener(
+                        "click",
+                        function (event) {
 
-            link.addEventListener("click", function (event) {
+                            event.preventDefault();
 
-                event.preventDefault();
+                        }
+                    );
 
-            });
+                }
 
-        }
+            }
+        );
 
-    });
-
-});
+    }
+);
