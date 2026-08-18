@@ -972,3 +972,17 @@ body {
         box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
     }
 }
+
+@media (max-width: 600px) {
+
+    /* A.R. Rahman - image left */
+    .arrahman-page {
+        background-position: 35% center;
+    }
+
+    /* Arijit - image right */
+    .arijit-page {
+        background-position: 65% center;
+    }
+
+}
