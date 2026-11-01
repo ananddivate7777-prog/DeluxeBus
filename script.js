@@ -13,6 +13,162 @@ let lastVideoId = "";
 
 
 /* =========================================================
+   MEDIA SESSION - LOCK SCREEN / HEADSET CONTROLS
+   ========================================================= */
+
+function setMediaPlaybackState(state) {
+    if ("mediaSession" in navigator) {
+        try {
+            navigator.mediaSession.playbackState = state;
+        } catch (error) {
+            console.warn("Media playback state update failed:", error);
+        }
+    }
+}
+
+function updateMediaSession(video) {
+    if (!("mediaSession" in navigator) || !video) return;
+
+    const videoId = video.videoId || "";
+    const artworkUrl = videoId
+        ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        : "";
+
+    try {
+        if ("MediaMetadata" in window) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: video.title || "Unknown Song",
+                artist: "DeluxePlaylist",
+                album: "DeluxePlaylist",
+                artwork: artworkUrl
+                    ? [
+                        { src: artworkUrl, sizes: "120x90", type: "image/jpeg" },
+                        { src: artworkUrl, sizes: "480x360", type: "image/jpeg" }
+                    ]
+                    : []
+            });
+        }
+    } catch (error) {
+        console.warn("Media metadata update failed:", error);
+    }
+}
+
+function updateMediaPosition() {
+    if (
+        !("mediaSession" in navigator) ||
+        typeof navigator.mediaSession.setPositionState !== "function" ||
+        !playerReady || !player
+    ) {
+        return;
+    }
+
+    try {
+        const duration = player.getDuration();
+        const position = player.getCurrentTime();
+
+        if (
+            Number.isFinite(duration) && duration > 0 &&
+            Number.isFinite(position) && position >= 0
+        ) {
+            navigator.mediaSession.setPositionState({
+                duration: duration,
+                playbackRate: 1,
+                position: Math.min(position, duration)
+            });
+        }
+    } catch (error) {
+        // Ignore unsupported position updates.
+    }
+}
+
+function setupMediaSession() {
+    if (!("mediaSession" in navigator)) {
+        console.log("Media Session API is not supported in this browser.");
+        return;
+    }
+
+    const setHandler = (action, handler) => {
+        try {
+            navigator.mediaSession.setActionHandler(action, handler);
+        } catch (error) {
+            // Ignore unsupported actions.
+        }
+    };
+
+    // PLAY
+    setHandler("play", function () {
+        if (playerReady && player) {
+            player.playVideo();
+        }
+    });
+
+    // PAUSE
+    setHandler("pause", function () {
+        if (playerReady && player) {
+            player.pauseVideo();
+        }
+    });
+
+    // PREVIOUS
+    setHandler("previoustrack", function () {
+        if (!playerReady || videoList.length === 0) return;
+
+        currentVideoIndex =
+            (currentVideoIndex - 1 + videoList.length) % videoList.length;
+
+        playCurrentVideo(true);
+    });
+
+    // NEXT
+    setHandler("nexttrack", function () {
+        if (playerReady) {
+            goToNextVideo();
+        }
+    });
+
+    // SEEK
+    setHandler("seekto", function (details) {
+        if (!playerReady || !player || !Number.isFinite(details.seekTime)) return;
+
+        player.seekTo(details.seekTime, true);
+        updateMediaPosition();
+    });
+
+    // SEEK BACKWARD
+    setHandler("seekbackward", function (details) {
+        if (!playerReady || !player) return;
+
+        const offset = details.seekOffset || 10;
+
+        player.seekTo(
+            Math.max(0, player.getCurrentTime() - offset),
+            true
+        );
+
+        updateMediaPosition();
+    });
+
+    // SEEK FORWARD
+    setHandler("seekforward", function (details) {
+        if (!playerReady || !player) return;
+
+        const offset = details.seekOffset || 10;
+        const duration = player.getDuration();
+        const target = player.getCurrentTime() + offset;
+
+        player.seekTo(
+            duration > 0 ? Math.min(target, duration) : target,
+            true
+        );
+
+        updateMediaPosition();
+    });
+}
+
+setupMediaSession();
+
+
+/* =========================================================
    1. GET PLAYLIST FROM SERVER
    ========================================================= */
 
@@ -26,11 +182,7 @@ async function loadPlaylistFromServer() {
             window.PLAYLIST_ID || "";
 
         if (!playlistId) {
-
-            throw new Error(
-                "PLAYLIST_ID is missing"
-            );
-
+            throw new Error("PLAYLIST_ID is missing");
         }
 
         const response = await fetch(
@@ -40,33 +192,16 @@ async function loadPlaylistFromServer() {
         const data = await response.json();
 
         if (!response.ok) {
-
             throw new Error(
-                data.error ||
-                "Playlist API failed"
+                data.error || "Playlist API failed"
             );
-
         }
 
-        console.log(
-            "Playlist received:",
-            data
-        );
+        console.log("Playlist received:", data);
 
-        if (
-            !data.videos ||
-            data.videos.length === 0
-        ) {
-
-            throw new Error(
-                "Playlist has no videos"
-            );
-
+        if (!data.videos || data.videos.length === 0) {
+            throw new Error("Playlist has no videos");
         }
-
-        /*
-           Store playlist
-        */
 
         videoList = data.videos.filter(
             video =>
@@ -75,54 +210,31 @@ async function loadPlaylistFromServer() {
                 video.title !== "Deleted video"
         );
 
-        console.log(
-            "Playable candidates:",
-            videoList.length
-        );
+        console.log("Playable candidates:", videoList.length);
 
-        if (
-            videoList.length === 0
-        ) {
-
-            throw new Error(
-                "No playable videos found"
-            );
-
+        if (videoList.length === 0) {
+            throw new Error("No playable videos found");
         }
 
-        /*
-           If player already ready
-        */
-
         if (playerReady) {
-
             startPlaylist();
-
         }
 
     } catch (error) {
 
-        console.error(
-            "Playlist loading error:",
-            error
-        );
+        console.error("Playlist loading error:", error);
 
-        const title =
-            document.getElementById("songTitle");
+        const title = document.getElementById("songTitle");
+        const artist = document.getElementById("songArtist");
 
-        const artist =
-            document.getElementById("songArtist");
+        if (title) {
+            title.textContent = "Playlist loading failed";
+        }
 
-        if (title)
-            title.textContent =
-                "Playlist loading failed";
-
-        if (artist)
-            artist.textContent =
-                error.message;
-
+        if (artist) {
+            artist.textContent = error.message;
+        }
     }
-
 }
 
 
@@ -132,19 +244,15 @@ async function loadPlaylistFromServer() {
 
 function onYouTubeIframeAPIReady() {
 
-    console.log(
-        "YouTube IFrame API ready"
-    );
+    console.log("YouTube IFrame API ready");
 
     player = new YT.Player(
         "youtube-player",
         {
-
             width: "200",
             height: "200",
 
             playerVars: {
-
                 autoplay: 0,
                 controls: 0,
                 disablekb: 1,
@@ -152,25 +260,15 @@ function onYouTubeIframeAPIReady() {
                 rel: 0,
                 enablejsapi: 1,
                 origin: window.location.origin
-
             },
 
             events: {
-
-                onReady:
-                    onPlayerReady,
-
-                onStateChange:
-                    onPlayerStateChange,
-
-                onError:
-                    onPlayerError
-
+                onReady: onPlayerReady,
+                onStateChange: onPlayerStateChange,
+                onError: onPlayerError
             }
-
         }
     );
-
 }
 
 
@@ -180,22 +278,15 @@ function onYouTubeIframeAPIReady() {
 
 function onPlayerReady() {
 
-    console.log(
-        "YouTube player ready"
-    );
+    console.log("YouTube player ready");
 
     playerReady = true;
 
-    if (
-        videoList.length > 0
-    ) {
-
+    if (videoList.length > 0) {
         startPlaylist();
-
     }
 
     startProgressTimer();
-
 }
 
 
@@ -205,33 +296,18 @@ function onPlayerReady() {
 
 function startPlaylist() {
 
-    if (
-        !player ||
-        !playerReady ||
-        videoList.length === 0
-    ) {
-
+    if (!player || !playerReady || videoList.length === 0) {
         return;
-
     }
 
-    /*
-       Random starting song
-    */
+    // Random starting song
 
     currentVideoIndex =
-        Math.floor(
-            Math.random() *
-            videoList.length
-        );
+        Math.floor(Math.random() * videoList.length);
 
-    console.log(
-        "Starting index:",
-        currentVideoIndex
-    );
+    console.log("Starting index:", currentVideoIndex);
 
     playCurrentVideo(false);
-
 }
 
 
@@ -241,49 +317,23 @@ function startPlaylist() {
 
 function playCurrentVideo(autoplay = false) {
 
-    if (
-        !playerReady ||
-        !player ||
-        videoList.length === 0
-    ) {
-
+    if (!playerReady || !player || videoList.length === 0) {
         return;
-
     }
 
-    /*
-       Safety
-    */
-
-    if (
-        currentVideoIndex < 0
-    ) {
-
+    if (currentVideoIndex < 0) {
         currentVideoIndex = 0;
-
     }
 
-    if (
-        currentVideoIndex >=
-        videoList.length
-    ) {
-
+    if (currentVideoIndex >= videoList.length) {
         currentVideoIndex = 0;
-
     }
 
-    const video =
-        videoList[currentVideoIndex];
+    const video = videoList[currentVideoIndex];
 
-    if (
-        !video ||
-        !video.videoId
-    ) {
-
+    if (!video || !video.videoId) {
         goToNextVideo();
-
         return;
-
     }
 
     console.log(
@@ -294,32 +344,18 @@ function playCurrentVideo(autoplay = false) {
 
     lastVideoId = "";
 
-    /*
-       Show title immediately
-    */
-
     updateSongText(video);
-
-    /*
-       IMPORTANT:
-       Do NOT use cuePlaylist().
-       Load only one video.
-    */
+    updateMediaSession(video);
 
     if (autoplay) {
 
-        player.loadVideoById(
-            video.videoId
-        );
+        player.loadVideoById(video.videoId);
 
     } else {
 
-        player.cueVideoById(
-            video.videoId
-        );
+        player.cueVideoById(video.videoId);
 
     }
-
 }
 
 
@@ -329,41 +365,25 @@ function playCurrentVideo(autoplay = false) {
 
 document
     .getElementById("playBtn")
-    .addEventListener(
-        "click",
-        function () {
+    .addEventListener("click", function () {
 
-            if (
-                !playerReady ||
-                !player
-            ) {
+        if (!playerReady || !player) {
+            console.log("Player is not ready");
+            return;
+        }
 
-                console.log(
-                    "Player is not ready"
-                );
+        const state = player.getPlayerState();
 
-                return;
+        if (state === YT.PlayerState.PLAYING) {
 
-            }
+            player.pauseVideo();
 
-            const state =
-                player.getPlayerState();
+        } else {
 
-            if (
-                state ===
-                YT.PlayerState.PLAYING
-            ) {
-
-                player.pauseVideo();
-
-            } else {
-
-                player.playVideo();
-
-            }
+            player.playVideo();
 
         }
-    );
+    });
 
 
 /* =========================================================
@@ -372,34 +392,20 @@ document
 
 document
     .getElementById("previousBtn")
-    .addEventListener(
-        "click",
-        function () {
+    .addEventListener("click", function () {
 
-            if (
-                !playerReady
-            ) return;
+        if (!playerReady || videoList.length === 0) return;
 
-            currentVideoIndex--;
+        currentVideoIndex--;
 
-            if (
-                currentVideoIndex < 0
-            ) {
-
-                currentVideoIndex =
-                    videoList.length - 1;
-
-            }
-
-            console.log(
-                "Previous:",
-                currentVideoIndex
-            );
-
-            playCurrentVideo(true);
-
+        if (currentVideoIndex < 0) {
+            currentVideoIndex = videoList.length - 1;
         }
-    );
+
+        console.log("Previous:", currentVideoIndex);
+
+        playCurrentVideo(true);
+    });
 
 
 /* =========================================================
@@ -408,18 +414,12 @@ document
 
 document
     .getElementById("nextBtn")
-    .addEventListener(
-        "click",
-        function () {
+    .addEventListener("click", function () {
 
-            if (
-                !playerReady
-            ) return;
+        if (!playerReady) return;
 
-            goToNextVideo();
-
-        }
-    );
+        goToNextVideo();
+    });
 
 
 /* =========================================================
@@ -428,36 +428,19 @@ document
 
 function goToNextVideo() {
 
-    if (
-        videoList.length === 0
-    ) {
-
+    if (videoList.length === 0) {
         return;
-
     }
 
     currentVideoIndex++;
 
-    /*
-       Last song → first song
-    */
-
-    if (
-        currentVideoIndex >=
-        videoList.length
-    ) {
-
+    if (currentVideoIndex >= videoList.length) {
         currentVideoIndex = 0;
-
     }
 
-    console.log(
-        "Next:",
-        currentVideoIndex
-    );
+    console.log("Next:", currentVideoIndex);
 
     playCurrentVideo(true);
-
 }
 
 
@@ -467,137 +450,77 @@ function goToNextVideo() {
 
 function onPlayerStateChange(event) {
 
-    console.log(
-        "Player state:",
-        event.data
-    );
+    console.log("Player state:", event.data);
 
+    // PLAYING
 
-    /*
-       PLAYING
-    */
+    if (event.data === YT.PlayerState.PLAYING) {
 
-    if (
-        event.data ===
-        YT.PlayerState.PLAYING
-    ) {
+        document.getElementById("playIcon").textContent = "❚❚";
 
-        document.getElementById(
-            "playIcon"
-        ).textContent = "❚❚";
-
-        const image =
-            document.querySelector(
-                ".song-image"
-            );
+        const image = document.querySelector(".song-image");
 
         if (image) {
-
-            image.classList.add(
-                "playing"
-            );
-
+            image.classList.add("playing");
         }
 
         updateCurrentSong();
 
+        setMediaPlaybackState("playing");
+        updateMediaPosition();
     }
 
+    // PAUSED
 
-    /*
-       PAUSED
-    */
+    else if (event.data === YT.PlayerState.PAUSED) {
 
-    else if (
-        event.data ===
-        YT.PlayerState.PAUSED
-    ) {
+        document.getElementById("playIcon").textContent = "▶";
 
-        document.getElementById(
-            "playIcon"
-        ).textContent = "▶";
-
-        const image =
-            document.querySelector(
-                ".song-image"
-            );
+        const image = document.querySelector(".song-image");
 
         if (image) {
-
-            image.classList.remove(
-                "playing"
-            );
-
+            image.classList.remove("playing");
         }
 
+        setMediaPlaybackState("paused");
+        updateMediaPosition();
     }
 
+    // ENDED
 
-    /*
-       ENDED
-    */
+    else if (event.data === YT.PlayerState.ENDED) {
 
-    else if (
-        event.data ===
-        YT.PlayerState.ENDED
-    ) {
+        document.getElementById("playIcon").textContent = "▶";
 
-        document.getElementById(
-            "playIcon"
-        ).textContent = "▶";
-
-        const image =
-            document.querySelector(
-                ".song-image"
-            );
+        const image = document.querySelector(".song-image");
 
         if (image) {
-
-            image.classList.remove(
-                "playing"
-            );
-
+            image.classList.remove("playing");
         }
 
-        /*
-           Automatically play next
-        */
+        setMediaPlaybackState("none");
+
+        // Automatically play next
 
         goToNextVideo();
-
     }
 
+    // CUED
 
-    /*
-       CUED
-    */
+    else if (event.data === YT.PlayerState.CUED) {
 
-    else if (
-        event.data ===
-        YT.PlayerState.CUED
-    ) {
+        document.getElementById("playIcon").textContent = "▶";
 
-        document.getElementById(
-            "playIcon"
-        ).textContent = "▶";
-
-        const image =
-            document.querySelector(
-                ".song-image"
-            );
+        const image = document.querySelector(".song-image");
 
         if (image) {
-
-            image.classList.remove(
-                "playing"
-            );
-
+            image.classList.remove("playing");
         }
 
         updateCurrentSong();
 
+        setMediaPlaybackState("paused");
     }
-
 }
 
 
@@ -607,74 +530,41 @@ function onPlayerStateChange(event) {
 
 function updateCurrentSong() {
 
-    if (
-        !playerReady ||
-        !player
-    ) {
-
+    if (!playerReady || !player) {
         return;
-
     }
 
     try {
 
-        const videoData =
-            player.getVideoData();
+        const videoData = player.getVideoData();
 
-        if (
-            !videoData ||
-            !videoData.video_id
-        ) {
-
+        if (!videoData || !videoData.video_id) {
             return;
-
         }
 
-        const videoId =
-            videoData.video_id;
+        const videoId = videoData.video_id;
 
-        /*
-           Find index
-        */
+        // Find index
 
-        const foundIndex =
-            videoList.findIndex(
-                function (video) {
+        const foundIndex = videoList.findIndex(
+            function (video) {
+                return video.videoId === videoId;
+            }
+        );
 
-                    return (
-                        video.videoId ===
-                        videoId
-                    );
-
-                }
-            );
-
-        if (
-            foundIndex !== -1
-        ) {
-
-            currentVideoIndex =
-                foundIndex;
-
+        if (foundIndex !== -1) {
+            currentVideoIndex = foundIndex;
         }
 
-        /*
-           Don't update same video
-        */
+        // Don't update same video
 
-        if (
-            videoId === lastVideoId
-        ) {
-
+        if (videoId === lastVideoId) {
             return;
-
         }
 
-        lastVideoId =
-            videoId;
+        lastVideoId = videoId;
 
-        const video =
-            videoList[currentVideoIndex];
+        const video = videoList[currentVideoIndex];
 
         const title =
             videoData.title ||
@@ -685,37 +575,29 @@ function updateCurrentSong() {
             videoData.author ||
             "YouTube Music";
 
-        document.getElementById(
-            "songTitle"
-        ).textContent =
-            title;
+        document.getElementById("songTitle").textContent = title;
 
-        document.getElementById(
-            "songArtist"
-        ).textContent =
-            artist;
+        document.getElementById("songArtist").textContent = artist;
 
-        document.getElementById(
-            "songThumbnail"
-        ).src =
+        document.getElementById("songThumbnail").src =
             "https://img.youtube.com/vi/" +
             videoId +
             "/hqdefault.jpg";
 
-        console.log(
-            "Now playing:",
-            title
-        );
+        // Update lock screen metadata
+
+        updateMediaSession({
+            videoId: videoId,
+            title: title
+        });
+
+        console.log("Now playing:", title);
 
     } catch (error) {
 
-        console.error(
-            "Song information error:",
-            error
-        );
+        console.error("Song information error:", error);
 
     }
-
 }
 
 
@@ -727,30 +609,20 @@ function updateSongText(video) {
 
     if (!video) return;
 
-    document.getElementById(
-        "songTitle"
-    ).textContent =
-        video.title ||
-        "Horn OK Please";
+    document.getElementById("songTitle").textContent =
+        video.title || "Horn OK Please";
 
-    document.getElementById(
-        "songArtist"
-    ).textContent =
+    document.getElementById("songArtist").textContent =
         "Press ▶ to play";
 
-    if (
-        video.videoId
-    ) {
+    if (video.videoId) {
 
-        document.getElementById(
-            "songThumbnail"
-        ).src =
+        document.getElementById("songThumbnail").src =
             "https://img.youtube.com/vi/" +
             video.videoId +
             "/hqdefault.jpg";
 
     }
-
 }
 
 
@@ -760,26 +632,16 @@ function updateSongText(video) {
 
 function startProgressTimer() {
 
-    if (
-        progressTimer
-    ) {
-
-        clearInterval(
-            progressTimer
-        );
-
+    if (progressTimer) {
+        clearInterval(progressTimer);
     }
 
-    progressTimer =
-        setInterval(
-            function () {
-
-                updateProgressBar();
-
-            },
-            500
-        );
-
+    progressTimer = setInterval(
+        function () {
+            updateProgressBar();
+        },
+        500
+    );
 }
 
 
@@ -789,45 +651,26 @@ function startProgressTimer() {
 
 function updateProgressBar() {
 
-    if (
-        !playerReady ||
-        !player
-    ) {
-
+    if (!playerReady || !player) {
         return;
-
     }
 
     try {
 
-        const duration =
-            player.getDuration();
+        const duration = player.getDuration();
+        const currentTime = player.getCurrentTime();
 
-        const currentTime =
-            player.getCurrentTime();
-
-        if (
-            !duration ||
-            duration <= 0
-        ) {
-
+        if (!duration || duration <= 0) {
             return;
-
         }
 
         const percentage =
-            (
-                currentTime /
-                duration
-            ) * 100;
+            (currentTime / duration) * 100;
 
         const progressBar =
-            document.getElementById(
-                "progressBar"
-            );
+            document.getElementById("progressBar");
 
-        progressBar.value =
-            percentage;
+        progressBar.value = percentage;
 
         progressBar.style.background =
             `linear-gradient(
@@ -836,28 +679,21 @@ function updateProgressBar() {
                 rgba(255,255,255,0.3) ${percentage}%
             )`;
 
-        document.getElementById(
-            "currentTime"
-        ).textContent =
-            formatTime(
-                currentTime
-            );
+        document.getElementById("currentTime").textContent =
+            formatTime(currentTime);
 
-        document.getElementById(
-            "duration"
-        ).textContent =
-            formatTime(
-                duration
-            );
+        document.getElementById("duration").textContent =
+            formatTime(duration);
+
+        // Update lock screen progress
+
+        updateMediaPosition();
 
     } catch (error) {
 
-        /*
-           Ignore temporary errors
-        */
+        // Ignore temporary errors
 
     }
-
 }
 
 
@@ -867,39 +703,21 @@ function updateProgressBar() {
 
 document
     .getElementById("progressBar")
-    .addEventListener(
-        "input",
-        function () {
+    .addEventListener("input", function () {
 
-            if (
-                !playerReady ||
-                !player
-            ) return;
+        if (!playerReady || !player) return;
 
-            const duration =
-                player.getDuration();
+        const duration = player.getDuration();
 
-            if (
-                !duration ||
-                duration <= 0
-            ) return;
+        if (!duration || duration <= 0) return;
 
-            const percentage =
-                Number(this.value);
+        const percentage = Number(this.value);
 
-            const newTime =
-                duration *
-                (
-                    percentage / 100
-                );
+        const newTime =
+            duration * (percentage / 100);
 
-            player.seekTo(
-                newTime,
-                true
-            );
-
-        }
-    );
+        player.seekTo(newTime, true);
+    });
 
 
 /* =========================================================
@@ -908,34 +726,21 @@ document
 
 function formatTime(seconds) {
 
-    if (
-        !seconds ||
-        isNaN(seconds)
-    ) {
-
+    if (!seconds || isNaN(seconds)) {
         return "0:00";
-
     }
 
-    seconds =
-        Math.floor(seconds);
+    seconds = Math.floor(seconds);
 
-    const minutes =
-        Math.floor(
-            seconds / 60
-        );
+    const minutes = Math.floor(seconds / 60);
 
-    const remainingSeconds =
-        seconds % 60;
+    const remainingSeconds = seconds % 60;
 
     return (
         minutes +
         ":" +
-        String(
-            remainingSeconds
-        ).padStart(2, "0")
+        String(remainingSeconds).padStart(2, "0")
     );
-
 }
 
 
@@ -945,90 +750,50 @@ function formatTime(seconds) {
 
 function onPlayerError(event) {
 
-    console.error(
-        "YouTube Player Error:",
-        event.data
-    );
+    console.error("YouTube Player Error:", event.data);
 
-    const errorCode =
-        event.data;
+    const errorCode = event.data;
 
-    /*
-       100 =
-       Video unavailable / deleted
-    */
+    // 100 = Video unavailable / deleted
 
-    if (
-        errorCode === 100
-    ) {
+    if (errorCode === 100) {
 
-        console.log(
-            "Video unavailable. Skipping..."
-        );
+        console.log("Video unavailable. Skipping...");
 
         skipUnavailableVideo();
 
         return;
-
     }
 
+    // 101 / 150 = Embedding disabled
 
-    /*
-       101 / 150 =
-       Embedding disabled
-    */
+    if (errorCode === 101 || errorCode === 150) {
 
-    if (
-        errorCode === 101 ||
-        errorCode === 150
-    ) {
-
-        console.log(
-            "Embedding disabled. Skipping..."
-        );
+        console.log("Embedding disabled. Skipping...");
 
         skipUnavailableVideo();
 
         return;
-
     }
 
+    // Error 2 = Invalid video ID
 
-    /*
-       Error 2 =
-       Invalid video ID
-    */
+    if (errorCode === 2) {
 
-    if (
-        errorCode === 2
-    ) {
-
-        console.log(
-            "Invalid video ID. Skipping..."
-        );
+        console.log("Invalid video ID. Skipping...");
 
         skipUnavailableVideo();
 
         return;
-
     }
 
+    // Other errors
 
-    /*
-       Other errors
-    */
-
-    document.getElementById(
-        "songTitle"
-    ).textContent =
+    document.getElementById("songTitle").textContent =
         "Unable to play this song";
 
-    document.getElementById(
-        "songArtist"
-    ).textContent =
-        "YouTube error " +
-        errorCode;
-
+    document.getElementById("songArtist").textContent =
+        "YouTube error " + errorCode;
 }
 
 
@@ -1038,29 +803,18 @@ function onPlayerError(event) {
 
 function skipUnavailableVideo() {
 
-    document.getElementById(
-        "songTitle"
-    ).textContent =
+    document.getElementById("songTitle").textContent =
         "Skipping unavailable song...";
 
-    document.getElementById(
-        "songArtist"
-    ).textContent =
+    document.getElementById("songArtist").textContent =
         "Trying next song";
-
-    /*
-       Don't get stuck
-    */
 
     setTimeout(
         function () {
-
             goToNextVideo();
-
         },
         500
     );
-
 }
 
 
@@ -1078,25 +832,17 @@ loadPlaylistFromServer();
 function togglePlaylistMenu() {
 
     const menu =
-        document.getElementById(
-            "playlistMenu"
-        );
+        document.getElementById("playlistMenu");
 
-    if (
-        menu.style.display ===
-        "block"
-    ) {
+    if (menu.style.display === "block") {
 
-        menu.style.display =
-            "none";
+        menu.style.display = "none";
 
     } else {
 
-        menu.style.display =
-            "block";
+        menu.style.display = "block";
 
     }
-
 }
 
 
@@ -1104,85 +850,55 @@ function togglePlaylistMenu() {
    21. CLOSE DROPDOWN OUTSIDE CLICK
    ========================================================= */
 
-document.addEventListener(
-    "click",
-    function (event) {
+document.addEventListener("click", function (event) {
 
-        const dropdown =
-            document.querySelector(
-                ".playlist-dropdown"
-            );
+    const dropdown =
+        document.querySelector(".playlist-dropdown");
 
-        if (
-            dropdown &&
-            !dropdown.contains(
-                event.target
-            )
-        ) {
+    if (dropdown && !dropdown.contains(event.target)) {
 
-            document.getElementById(
-                "playlistMenu"
-            ).style.display =
-                "none";
-
-        }
+        document.getElementById("playlistMenu").style.display =
+            "none";
 
     }
-);
+});
 
 
 /* =========================================================
    22. CURRENT PLAYLIST
    ========================================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-        const currentPage =
-            window.location.pathname
+    const currentPage =
+        window.location.pathname
+            .split("/")
+            .pop()
+            .toLowerCase();
+
+    const playlistLinks =
+        document.querySelectorAll(".playlist-menu a");
+
+    playlistLinks.forEach(function (link) {
+
+        const linkPage =
+            link.getAttribute("href")
                 .split("/")
                 .pop()
                 .toLowerCase();
 
-        const playlistLinks =
-            document.querySelectorAll(
-                ".playlist-menu a"
-            );
+        if (linkPage === currentPage) {
 
-        playlistLinks.forEach(
-            function (link) {
+            link.classList.add("current-playlist");
 
-                const linkPage =
-                    link.getAttribute(
-                        "href"
-                    )
-                    .split("/")
-                    .pop()
-                    .toLowerCase();
+            link.addEventListener("click", function (event) {
 
-                if (
-                    linkPage ===
-                    currentPage
-                ) {
+                event.preventDefault();
 
-                    link.classList.add(
-                        "current-playlist"
-                    );
+            });
 
-                    link.addEventListener(
-                        "click",
-                        function (event) {
+        }
 
-                            event.preventDefault();
+    });
 
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-    }
-);
+});
