@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Kishore Kumar Songs – Romantic & Peace Hindi Playlist | Deluxe Library</title>
+    <meta name="Listen to a timeless Kishore Kumar Hindi music playlist featuring romantic melodies, soulful classics and evergreen Bollywood hits, perfect for late nights, long drives and peaceful moments.">
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="icon" type="image/png" href="/favicon.jpeg"/>
+
+</head>
+
+<body>
+
+    <body class="arijit-page">
+
+    <img src="DeluxeLogo.jpeg" alt="Deluxe Library" class="deluxe-logo">
+
+    <div class="playlist-dropdown">
+    <button class="playlist-btn" onclick="togglePlaylistMenu()">
+        ♪ Kishore Kumar
+        <span>▾</span>
+    </button>
+
+    <div class="playlist-menu" id="playlistMenu">
+    <a href="index.html">♪ Old Vibe</a>
+    <a href="OldLofi.html">♡ Bollywood Old - Lofi</a>
+    <a href="kishoreKumar.html">♪ Kishore Kumar</a>
+    <a href="Arijit.html">♪ Arijit Singh</a>
+    <a href="Rahman.html">♪ A. R. Rahman</a>
+    <a href="HoneySingh.html">♬ Yo Yo Honey Singh</a>
+    <a href="Lofi.html">◌ Lofi Vibes</a>
+    <a href="Gym.html">♨ Gym Energy - Beats</a>
+    <a href="GymBollywood.html">♫ Energy / Fun - Bollywood</a>
+    <a href="Sad.html">♢ Sad Songs</a>
+</div>
+</div>
+
+    <!-- BACKGROUND IMAGE -->
+<img src="Kishore Kumar.png" alt="Deluxe Dhaba" class="bg-image">
+
+    <div class="overlay"></div>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-container">
+
+        <section class="hero">
+
+            <h1>
+                <span class="best-of">𝓑𝓮𝓼𝓽 𝓸𝓯</span><br>
+                KISHORE KUMAR
+            </h1>
+
+            <p>
+               • Where Every Journey Has a Soundtrack •
+            </p>
+
+        </section>
+
+
+        <!-- CUSTOM MUSIC PLAYER -->
+        <div class="music-player">
+
+            <div class="player-header">
+                <span>MUSIC • PEACE • MEMORIES</span>
+            </div>
+
+
+            <div class="player-content">
+
+                <div class="song-image">
+                    <img id="songThumbnail" src="" alt="Song">
+                </div>
+
+
+                <div class="song-info">
+
+                    <div id="songTitle" class="song-title">
+                        Loading playlist...
+                    </div>
+
+                    <div id="songArtist" class="song-artist">
+                        YouTube Music
+                    </div>
+
+                </div>
+
+
+                <div class="controls">
+
+                    <button
+                        id="previousBtn"
+                        class="control-btn"
+                        title="Previous"
+                    >
+                        ⏮
+                    </button>
+
+
+                    <button
+                        id="playBtn"
+                        class="play-btn"
+                        title="Play"
+                    >
+                        <span id="playIcon">▶</span>
+                    </button>
+
+
+                    <button
+                        id="nextBtn"
+                        class="control-btn"
+                        title="Next"
+                    >
+                        ⏭
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="progress-section">
+
+                <span id="currentTime">0:00</span>
+
+                <input
+                    type="range"
+                    id="progressBar"
+                    min="0"
+                    max="100"
+                    value="0"
+                >
+
+                <span id="duration">0:00</span>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!--
+        YouTube player.
+        Minimum 200x200 as required by YouTube IFrame API.
+        It is invisible to the user.
+    -->
+    <div id="youtube-player"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        window.PLAYLIST_ID = "PLGswK1VduEAI";
+    </script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
